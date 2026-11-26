@@ -73,7 +73,7 @@ else
   esac
 fi
 
-live_name() { basename "$(readlink -f "$CURRENT" 2>/dev/null || echo none)"; }
+live_name() { if [[ -L "$CURRENT" && -d "$CURRENT" ]]; then basename "$(readlink -f "$CURRENT")"; else echo none; fi; }
 
 if [[ $MODE == status ]]; then
   echo "Live release: $(live_name)"
@@ -196,19 +196,25 @@ step "Building API + website (the live site keeps running)"
 
 # ── Go live ──────────────────────────────────────────────────────────────────────────────────────────────
 step "Switching to the new release"
-PREV_DIR="$(readlink -f "$CURRENT" 2>/dev/null || true)"
+PREV_DIR="" # the release that was live before this deploy (none on the very first deploy)
+if [[ -L "$CURRENT" && -d "$CURRENT" ]]; then PREV_DIR="$(readlink -f "$CURRENT")"; fi
 switch_to "$NEW"
 SWITCHED=1
 reload_apps
 
 step "Checking the site"
 if ! healthy; then
-  if [[ -n "$PREV_DIR" && -d "$PREV_DIR" ]]; then
+  printf '\n--- last API errors ---\n' >&2
+  pm2 logs seamwell-api --err --lines 25 --nostream 2>&1 | sed -E 's#postgres(ql)?://[^ "]*#[db-url]#g' >&2 || true
+  printf '\n--- last website errors ---\n' >&2
+  pm2 logs seamwell-web --err --lines 15 --nostream 2>&1 | sed -E 's#postgres(ql)?://[^ "]*#[db-url]#g' >&2 || true
+  if [[ -n "$PREV_DIR" && -d "$PREV_DIR" && "$PREV_DIR" != "$(readlink -f "$NEW")" ]]; then
     warn "The new release failed its checks — switching back to $(basename "$PREV_DIR")"
     switch_to "$PREV_DIR"
     reload_apps
     healthy || warn "The previous release is not healthy either!"
   fi
+  [[ -n "$PREV_DIR" ]] || { pm2 stop "$CURRENT/deploy/ecosystem.config.cjs" >/dev/null 2>&1 || true; rm -f -- "$CURRENT"; fail "First deploy of ${SHA:0:7} failed its checks — apps stopped. See the errors above (more: pm2 logs --lines 80)."; }
   fail "Deploy of ${SHA:0:7} failed and was rolled back. Logs: pm2 logs --lines 80 (failed build kept in $NEW)"
 fi
 
