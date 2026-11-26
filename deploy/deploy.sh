@@ -93,12 +93,9 @@ switch_to() { # atomic: the new symlink replaces the old one in a single rename
   mv -Tf "$BASE/.current.tmp" "$CURRENT"
 }
 
-reload_apps() {
-  if pm2 describe seamwell-api >/dev/null 2>&1; then
-    pm2 reload "$CURRENT/deploy/ecosystem.config.cjs" >/dev/null
-  else
-    pm2 start "$CURRENT/deploy/ecosystem.config.cjs" >/dev/null
-  fi
+reload_apps() { # fresh PM2 definitions every time (a few seconds' restart), so config changes always apply
+  pm2 delete seamwell-api seamwell-web >/dev/null 2>&1 || true
+  pm2 start "$CURRENT/deploy/ecosystem.config.cjs" >/dev/null
   pm2 save >/dev/null
 }
 
