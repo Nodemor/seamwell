@@ -36,8 +36,9 @@ finished, then switches in one step. If the new release fails its health check, 
 ### Using Hostinger's web console (Browser terminal)
 hPanel → VPS → **Browser terminal** opens a root shell in the browser — you can run this whole guide from it.
 - It logs you in as **root**. Steps marked "as `deploy`" → first run `su - deploy` (type `exit` to get back to root).
-- It works even when SSH is broken or locked down, so it's your **rescue door** — keep the root password in your
-  password manager (hPanel → VPS → Settings → change root password).
+- It may itself connect over SSH as root — so after the SSH lock-down below it can stop working. That's expected:
+  from then on you log in from your PC with `ssh deploy@<vps-ip>` (key) and use `sudo`. Keep the root password in
+  your password manager anyway (hPanel → VPS → Settings) for Hostinger's recovery options.
 - GitHub's automatic deploys still need SSH (port 22, key only) — that's why §1 keeps SSH open but locks it to keys.
 - Pasting: use the console's paste button / right-click; long one-liners are safer typed in pieces if paste drops characters.
 
@@ -48,8 +49,8 @@ mkdir -p /home/deploy/.ssh && nano /home/deploy/.ssh/authorized_keys     # paste
 chown -R deploy: /home/deploy/.ssh && chmod 700 /home/deploy/.ssh && chmod 600 /home/deploy/.ssh/authorized_keys
 ```
 (Run these in the Browser terminal, or after `ssh root@<vps-ip>` from your PC.)
-Check `ssh deploy@<vps-ip>` from your PC works **before** locking root out — if it doesn't, the Browser terminal still
-gets you in. Then, as `deploy`:
+Check `ssh deploy@<vps-ip>` from your PC works **and** `sudo whoami` prints `root` there **before** locking root out —
+keep that PC session open while you restart SSH, so a mistake can be undone. Then, as `deploy`:
 ```bash
 sudo nano /etc/ssh/sshd_config.d/99-hardening.conf
 #   PasswordAuthentication no
@@ -106,7 +107,7 @@ sudo dpkg-reconfigure -plow unattended-upgrades # answer "Yes"
    then `sudo systemctl disable --now fail2ban`. Check with `sudo cscli metrics`.
 
 Don't block SSH to "only my IP": GitHub's deploy servers use changing IPs, and SSH is already key-only + banned on
-abuse. The Browser terminal is your way in if you ever lock yourself out.
+abuse. If you ever lock yourself out, use hPanel's VPS recovery options.
 
 ## 2. Node.js 22 + PM2
 ```bash
