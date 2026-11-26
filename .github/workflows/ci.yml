@@ -81,8 +81,17 @@ jobs:
           PORT=$(printf '%s' "${PORT:-22}" | tr -d '[:space:]'); PORT=${PORT:-22}
           printf '%s\n' "$SSH_KEY" | tr -d '\r' | sed 's/[[:space:]]*$//' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
-            echo "::error::VPS_SSH_KEY is not a valid private key. Paste the whole key file, including the -----BEGIN and -----END lines."
+          if [ ! -s ~/.ssh/deploy_key ] || [ "$(tr -d '[:space:]' < ~/.ssh/deploy_key)" = "" ]; then
+            echo "::error::VPS_SSH_KEY is empty or missing — add it under Settings → Environments → production → Environment secrets."
+            exit 1
+          fi
+          # -P "" = never prompt. The diagnostics below describe the pasted text without revealing any of it.
+          if ! KEY_ERR=$(ssh-keygen -y -P "" -f ~/.ssh/deploy_key 2>&1 >/dev/null); then
+            K=~/.ssh/deploy_key
+            echo "::error::VPS_SSH_KEY is not a usable private key: ${KEY_ERR:-unknown error}"
+            echo "  lines: $(wc -l < "$K") · BEGIN line: $(grep -c -- '-----BEGIN OPENSSH PRIVATE KEY-----' "$K") · END line: $(grep -c -- '-----END OPENSSH PRIVATE KEY-----' "$K")"
+            echo "  looks like the PUBLIC (.pub) key instead: $(grep -c '^ssh-ed25519 ' "$K") · protected by a passphrase: $(grep -qi 'passphrase' <<<"$KEY_ERR" && echo yes || echo no)"
+            echo "  Fix: copy the whole PRIVATE key file (no .pub, created with an EMPTY passphrase) incl. its BEGIN/END lines."
             exit 1
           fi
           # Pin the server's identity (no trust-on-first-use): VPS_HOST_KEY = the "ssh-ed25519 AAAA…" line from
