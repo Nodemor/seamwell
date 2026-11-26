@@ -1,7 +1,7 @@
 name: CI / Deploy
 
 # Pull requests: checks only. A merge (push) to main: checks, then deploy to the VPS.
-# Deploying needs the "production" environment (secrets VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_KNOWN_HOSTS,
+# Deploying needs the "production" environment (secrets VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_HOST_KEY,
 # optional VPS_PORT) and the repository variable DEPLOY_ENABLED=true — see docs/07-deployment-vps.md §8.
 # Fork pull requests never receive secrets (event "pull_request", never "pull_request_target").
 on:
@@ -29,11 +29,11 @@ jobs:
       NEXT_PUBLIC_SITE_URL: https://example.com
       API_INTERNAL_URL: http://127.0.0.1:4000
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -67,20 +67,45 @@ jobs:
       group: deploy-production
       cancel-in-progress: false # never cut a deploy off halfway; the next one waits
     steps:
-      - name: Deploy this commit over SSH
+      - name: Prepare the SSH key and the server's identity
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          HOST_KEY: ${{ secrets.VPS_HOST_KEY }}
           HOST: ${{ secrets.VPS_HOST }}
-          USER: ${{ secrets.VPS_USER }}
           PORT: ${{ secrets.VPS_PORT }}
         run: |
           set -euo pipefail
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts # pinned server key: no trust-on-first-use
+          # Secrets pasted from a web console / Windows often carry \r, stray spaces or wrapped lines — clean them.
+          HOST=$(printf '%s' "$HOST" | tr -d '[:space:]')
+          PORT=$(printf '%s' "${PORT:-22}" | tr -d '[:space:]'); PORT=${PORT:-22}
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' | sed 's/[[:space:]]*$//' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
+            echo "::error::VPS_SSH_KEY is not a valid private key. Paste the whole key file, including the -----BEGIN and -----END lines."
+            exit 1
+          fi
+          # Pin the server's identity (no trust-on-first-use): VPS_HOST_KEY = the "ssh-ed25519 AAAA…" line from
+          # /etc/ssh/ssh_host_ed25519_key.pub on the VPS. Line breaks inside it are removed.
+          KEY_B64=$(printf '%s' "$HOST_KEY" | tr -d '\r\n' | awk '{ for (i = 1; i < NF; i++) if ($i == "ssh-ed25519") { print $(i + 1); exit } }')
+          if [ -z "$KEY_B64" ]; then
+            echo "::error::VPS_HOST_KEY must contain 'ssh-ed25519 AAAA…' (from /etc/ssh/ssh_host_ed25519_key.pub on the VPS)."
+            exit 1
+          fi
+          if [ "$PORT" = 22 ]; then NAME="$HOST"; else NAME="[$HOST]:$PORT"; fi
+          printf '%s ssh-ed25519 %s\n' "$NAME" "$KEY_B64" > ~/.ssh/known_hosts
+          echo "Server identity expected (compare with: ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub):"
+          ssh-keygen -lf ~/.ssh/known_hosts
+          printf 'HOST=%s\nPORT=%s\n' "$HOST" "$PORT" >> "$GITHUB_ENV"
+
+      - name: Deploy this commit over SSH
+        env:
+          USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+          USER=$(printf '%s' "$USER" | tr -d '[:space:]')
           # The key is locked on the server to `deploy.sh --from-ssh`, which accepts only "deploy <sha>".
-          ssh -i ~/.ssh/deploy_key -p "${PORT:-22}" \
+          ssh -i ~/.ssh/deploy_key -p "$PORT" \
             -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ServerAliveInterval=30 \
             "$USER@$HOST" "deploy $GITHUB_SHA"
 
