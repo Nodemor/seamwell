@@ -1,0 +1,217 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+/* Display font: Latin subset only (English site) — keeps unused Cyrillic/Vietnamese @font-face rules out of the CSS. */
+@import "@fontsource/cormorant-garamond/latin-500.css";
+@import "@fontsource/cormorant-garamond/latin-600.css";
+@import "@fontsource/cormorant-garamond/latin-500-italic.css";
+
+/* =========================================================
+   Seamwell design tokens — see docs/03-design-system.md
+   Light, elegant, high-contrast. Dark components sit on light pages.
+   ========================================================= */
+:root {
+  /* Brand palette */
+  --sw-ivory: #faf7f2;     /* page background */
+  --sw-paper: #ffffff;     /* cards */
+  --sw-linen: #f1ebe1;     /* soft sections */
+  --sw-ink: #1b1a18;       /* main text */
+  --sw-midnight: #1f2a44;  /* primary — buttons, dark bands */
+  --sw-midnight-2: #2c3b5e;
+  --sw-brass: #b08d57;     /* accent — highlights, try-on */
+  --sw-brass-soft: #e9dcc4;
+  --sw-brass-ink: #7d602d;  /* brass for SMALL text on light surfaces (≥4.9:1 on ivory/paper/linen) */
+  --sw-stone: #6f6a61;     /* secondary text */
+  --sw-line: #e5ddd0;      /* borders */
+  --sw-wine: #7a2e3a;      /* sale / errors */
+  --sw-sage: #4f6b57;      /* success */
+
+  /* shadcn/ui variable names (so React Bits / 21st.dev / shadcn components match the brand automatically) */
+  --background: var(--sw-ivory);
+  --foreground: var(--sw-ink);
+  --card: var(--sw-paper);
+  --card-foreground: var(--sw-ink);
+  --popover: var(--sw-paper);
+  --popover-foreground: var(--sw-ink);
+  --primary: var(--sw-midnight);
+  --primary-foreground: var(--sw-ivory);
+  --secondary: var(--sw-linen);
+  --secondary-foreground: var(--sw-ink);
+  --muted: var(--sw-linen);
+  --muted-foreground: var(--sw-stone);
+  --accent: var(--sw-brass);
+  --accent-foreground: var(--sw-ink);
+  --destructive: var(--sw-wine);
+  --border: var(--sw-line);
+  --input: var(--sw-line);
+  --ring: var(--sw-brass);
+  --radius: 0.875rem;
+}
+
+@theme inline {
+  --color-ivory: var(--sw-ivory);
+  --color-paper: var(--sw-paper);
+  --color-linen: var(--sw-linen);
+  --color-ink: var(--sw-ink);
+  --color-midnight: var(--sw-midnight);
+  --color-midnight-2: var(--sw-midnight-2);
+  --color-brass: var(--sw-brass);
+  --color-brass-soft: var(--sw-brass-soft);
+  --color-brass-ink: var(--sw-brass-ink);
+  --color-stone: var(--sw-stone);
+  --color-line: var(--sw-line);
+  --color-wine: var(--sw-wine);
+  --color-sage: var(--sw-sage);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, serif;
+
+  --ease-tailor: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  * { border-color: var(--border); }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, .font-display { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.01em; }
+  ::selection { background: var(--sw-brass-soft); color: var(--sw-ink); }
+  :focus-visible { outline: 2px solid var(--sw-brass); outline-offset: 3px; border-radius: 6px; }
+}
+
+@layer components {
+  .container-sw { width: 100%; max-width: 1320px; margin-inline: auto; padding-inline: clamp(1.1rem, 4vw, 2.5rem); }
+  /* Eyebrows use brass-ink for contrast on light pages; on dark bands add `text-brass` (4.6:1 on midnight). */
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 600; color: var(--sw-brass-ink); }
+  /* Subtle pinstripe texture (suit fabric) */
+  .pinstripe {
+    background-image: repeating-linear-gradient(90deg, transparent 0 22px, rgb(31 42 68 / 0.035) 22px 23px);
+  }
+  /* Hide content that GSAP will reveal, but only when JS + motion are allowed (no flash, no invisible text without JS). */
+  .js-motion [data-reveal],
+  .js-motion [data-hero] { visibility: hidden; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  .js-motion [data-reveal],
+  .js-motion [data-hero] { visibility: visible; }
+}
+
+/* Readable text on content pages (components/layout/ContentPage.tsx) */
+.sw-prose { color: rgb(27 26 24 / 0.9); font-size: 0.975rem; line-height: 1.75; }
+.sw-prose > * + * { margin-top: 1.1rem; }
+.sw-prose h2 { margin-top: 2.6rem; font-size: 1.75rem; line-height: 1.2; color: var(--sw-ink); scroll-margin-top: 6rem; }
+.sw-prose h3 { margin-top: 1.8rem; font-family: var(--font-sans); font-size: 1rem; font-weight: 600; color: var(--sw-ink); }
+.sw-prose ul { list-style: disc; padding-left: 1.25rem; }
+.sw-prose ol { list-style: decimal; padding-left: 1.25rem; }
+.sw-prose li + li { margin-top: 0.4rem; }
+.sw-prose a:not([data-plain]) { color: var(--sw-midnight); text-decoration: underline; text-underline-offset: 4px; }
+.sw-prose a:not([data-plain]):hover { color: var(--sw-ink); }
+.sw-prose strong { color: var(--sw-ink); font-weight: 600; }
+.sw-prose table { width: 100%; font-size: 0.9rem; border-collapse: collapse; }
+.sw-prose th, .sw-prose td { padding: 0.65rem 1rem; text-align: left; border-top: 1px solid var(--sw-line); }
+.sw-prose thead th { background: var(--sw-linen); border-top: 0; font-weight: 600; }
+
+/* Hero looks (components/home/Hero.tsx): each look recolours ONLY the hero via these variables. */
+[data-hero-look] {
+  --hero-ink: var(--sw-ink);
+  --hero-muted: var(--sw-stone);
+  --hero-em: var(--sw-midnight);
+  --hero-accent: var(--sw-brass);
+  --hero-line: rgb(31 42 68 / 0.18);
+  --hero-chip: rgb(255 255 255 / 0.7);
+}
+[data-hero-look="nilame"] {
+  --hero-ink: #fff6e9;
+  --hero-muted: #f3d9b5;
+  --hero-em: #f2c25b;
+  --hero-accent: #f2c25b;
+  --hero-line: rgb(243 217 181 / 0.35);
+  --hero-chip: rgb(0 0 0 / 0.18);
+}
+[data-hero-look="kurta"] {
+  --hero-ink: #f7f4ff;
+  --hero-muted: #d5d9f2;
+  --hero-em: #ffb347;
+  --hero-accent: #ffb347;
+  --hero-line: rgb(213 217 242 / 0.35);
+  --hero-chip: rgb(0 0 0 / 0.2);
+}
+/* Inactive hero garments stay hidden (GSAP cross-fades them; this covers reduced motion and first paint). */
+[data-look-garment]:not([data-active]) { visibility: hidden; opacity: 0; }
+
+/* Hero 3D suit: clip light / scan / thickness layers to the suit's silhouette (alpha of the photo). */
+.sw-suit-mask {
+  -webkit-mask-image: url("/hero/suit-mask.webp");
+  mask-image: url("/hero/suit-mask.webp");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Overlay / dialog / sheet / accordion motion for the UI kit (components/ui).
+   CSS-only (no GSAP on these elements); the reduced-motion rule above shortens them to ~0. */
+@keyframes sw-fade-in { from { opacity: 0; } }
+@keyframes sw-fade-out { to { opacity: 0; } }
+@keyframes sw-pop-in { from { opacity: 0; transform: scale(0.96) translateY(6px); } }
+@keyframes sw-pop-out { to { opacity: 0; transform: scale(0.97); } }
+@keyframes sw-slide-in-right { from { transform: translateX(100%); } }
+@keyframes sw-slide-out-right { to { transform: translateX(100%); } }
+@keyframes sw-slide-in-left { from { transform: translateX(-100%); } }
+@keyframes sw-slide-out-left { to { transform: translateX(-100%); } }
+@keyframes sw-slide-in-bottom { from { transform: translateY(100%); } }
+@keyframes sw-slide-out-bottom { to { transform: translateY(100%); } }
+@keyframes sw-slide-in-top { from { transform: translateY(-100%); } }
+@keyframes sw-slide-out-top { to { transform: translateY(-100%); } }
+@keyframes sw-accordion-down { from { height: 0; } to { height: var(--radix-accordion-content-height); } }
+@keyframes sw-accordion-up { from { height: var(--radix-accordion-content-height); } to { height: 0; } }
+
+@utility sw-fade-in { animation: sw-fade-in 220ms var(--ease-tailor) both; }
+@utility sw-fade-out { animation: sw-fade-out 180ms ease-in both; }
+@utility sw-pop-in { animation: sw-pop-in 320ms var(--ease-tailor) both; }
+@utility sw-pop-out { animation: sw-pop-out 160ms ease-in both; }
+@utility sw-slide-in-right { animation: sw-slide-in-right 480ms var(--ease-tailor) both; }
+@utility sw-slide-out-right { animation: sw-slide-out-right 260ms ease-in both; }
+@utility sw-slide-in-left { animation: sw-slide-in-left 480ms var(--ease-tailor) both; }
+@utility sw-slide-out-left { animation: sw-slide-out-left 260ms ease-in both; }
+@utility sw-slide-in-bottom { animation: sw-slide-in-bottom 480ms var(--ease-tailor) both; }
+@utility sw-slide-out-bottom { animation: sw-slide-out-bottom 260ms ease-in both; }
+@utility sw-slide-in-top { animation: sw-slide-in-top 480ms var(--ease-tailor) both; }
+@utility sw-slide-out-top { animation: sw-slide-out-top 260ms ease-in both; }
+@utility sw-accordion-down { animation: sw-accordion-down 280ms var(--ease-tailor); }
+@utility sw-accordion-up { animation: sw-accordion-up 220ms ease-in; }
+
+/* Animated conic ring used by the Virtual Try-On button */
+@property --sw-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes sw-spin { to { --sw-angle: 360deg; } }
+@keyframes sw-pulse { 0%, 100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.6); opacity: 0; } }
+@keyframes sw-shimmer { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(220%) skewX(-20deg); } }

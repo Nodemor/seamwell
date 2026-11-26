@@ -1,0 +1,42 @@
+# dependencies
+node_modules/
+
+
+# builds
+.next/
+dist/
+out/
+*.tsbuildinfo
+.claude
+.vscode
+
+
+# env & secrets — never commit
+.env
+.env.*
+!.env.example
+
+# uploads (product photos uploaded through admin)
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
+
+# logs & OS
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+# test output
+coverage/
+playwright-report/
+
+# Playwright output
+apps/web/e2e/report/
+apps/web/e2e/results/
+apps/web/e2e/.uploads/

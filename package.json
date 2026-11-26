@@ -1,0 +1,38 @@
+{
+  "name": "seamwell",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Seamwell Tailoring — single-shop e-commerce platform with AI virtual try-on (Next.js + GSAP, Node.js API, PostgreSQL).",
+  "workspaces": [
+    "apps/web",
+    "apps/api",
+    "packages/shared"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w @seamwell/api\" \"npm run dev -w @seamwell/web\"",
+    "dev:api": "npm run dev -w @seamwell/api",
+    "dev:web": "npm run dev -w @seamwell/web",
+    "build": "npm run build -w @seamwell/api && npm run build -w @seamwell/web",
+    "start": "concurrently -n api,web \"npm run start -w @seamwell/api\" \"npm run start -w @seamwell/web\"",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e:web": "npm run test:e2e -w @seamwell/web",
+    "test:e2e:api": "npm run test:e2e:testdb -w @seamwell/api",
+    "test:all": "npm run typecheck && npm run lint && npm test && npm run test:e2e:api && npm run test:e2e:web",
+    "audit": "npm audit --omit=dev",
+    "db:up": "docker compose up -d db",
+    "db:generate": "npm run db:generate -w @seamwell/api",
+    "db:migrate": "npm run db:migrate -w @seamwell/api",
+    "db:seed": "npm run db:seed -w @seamwell/api",
+    "db:studio": "npm run db:studio -w @seamwell/api",
+    "admin:create": "npm run admin:create -w @seamwell/api"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7",
+    "typescript": "^5.9.3"
+  }
+}

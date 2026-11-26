@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 56" role="img" aria-label="Seamwell Tailoring">
+  <circle cx="28" cy="28" r="24" fill="#1f2a44"/>
+  <circle cx="28" cy="28" r="19" fill="none" stroke="#b08d57" stroke-width="1.3" stroke-dasharray="2.6 2.4"/>
+  <text x="28" y="36.5" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="28" font-style="italic" fill="#faf7f2">S</text>
+  <path d="M41.5 12 L34.5 19.5" stroke="#b08d57" stroke-width="1.7" stroke-linecap="round"/>
+  <circle cx="42.3" cy="11.2" r="1.4" fill="none" stroke="#b08d57" stroke-width="1"/>
+  <text x="64" y="32" font-family="Cormorant Garamond, Georgia, serif" font-size="30" fill="#1b1a18">Seamwell</text>
+  <text x="65" y="47" font-family="Inter, Arial, sans-serif" font-size="8.5" font-weight="600" letter-spacing="3.4" fill="#b08d57">TAILORING</text>
+</svg>

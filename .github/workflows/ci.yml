@@ -1,0 +1,89 @@
+name: CI / Deploy
+
+# Pull requests: checks only. A merge (push) to main: checks, then deploy to the VPS.
+# Deploying needs the "production" environment (secrets VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_KNOWN_HOSTS,
+# optional VPS_PORT) and the repository variable DEPLOY_ENABLED=true — see docs/07-deployment-vps.md §8.
+# Fork pull requests never receive secrets (event "pull_request", never "pull_request_target").
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: # "Run workflow" on main = redeploy the latest main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: Typecheck · lint · unit tests · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Build-time public values only (no secrets in CI).
+      NEXT_PUBLIC_SITE_URL: https://example.com
+      API_INTERNAL_URL: http://127.0.0.1:4000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build API + website
+        run: npm run build
+
+      - name: Audit production dependencies (high/critical fail the build)
+        run: npm audit --omit=dev --audit-level=high
+
+  deploy:
+    name: Deploy to the VPS
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production # secrets live here; GitHub → Settings → Environments → production → branch "main" only
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false # never cut a deploy off halfway; the next one waits
+    steps:
+      - name: Deploy this commit over SSH
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          HOST: ${{ secrets.VPS_HOST }}
+          USER: ${{ secrets.VPS_USER }}
+          PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts # pinned server key: no trust-on-first-use
+          # The key is locked on the server to `deploy.sh --from-ssh`, which accepts only "deploy <sha>".
+          ssh -i ~/.ssh/deploy_key -p "${PORT:-22}" \
+            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -o ServerAliveInterval=30 \
+            "$USER@$HOST" "deploy $GITHUB_SHA"
+
+      - name: Forget the key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

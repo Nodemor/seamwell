@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailor Try-On · Test Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f2ec; --card:#fffdf9; --ink:#1c1a17; --muted:#6d675d; --line:#e3ddd2;
+  --navy:#1e3354; --navy-2:#2c4a78; --gold:#a8834a; --ok:#2e7a4d; --err:#a8322a; --warn:#8a5a12;
+  --r:14px; --shadow:0 1px 2px rgba(28,26,23,.06),0 6px 20px rgba(28,26,23,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+button,input,select{font:inherit;color:inherit}
+h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;margin:0;letter-spacing:.2px}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:baseline;gap:12px}
+.brand h1{font-size:28px;color:var(--navy)}
+.brand span{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--gold);font-weight:600}
+.hdr-right{display:flex;gap:10px;align-items:center}
+.pill{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:#fff}
+.pill.ok{color:var(--ok);border-color:#bfe0cb;background:#f1faf4}
+.pill.warn{color:var(--warn);border-color:#ecd6ae;background:#fdf7ec}
+main{display:grid;grid-template-columns:300px minmax(0,1fr) 340px;gap:22px;padding:22px 28px 60px;max-width:1500px;margin:0 auto}
+@media (max-width:1180px){main{grid-template-columns:1fr 1fr}.col-cat{grid-column:1/-1;order:3}}
+@media (max-width:760px){main{grid-template-columns:1fr;padding:16px}.col-cat{order:0}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
+.step{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.step b{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px}
+.step h2{font-size:22px}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 14px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:#cfc7b8;background:#faf8f4}
+.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.primary:hover{background:var(--navy-2)}
+.btn.primary:disabled{background:#9aa6b8;border-color:#9aa6b8;cursor:not-allowed}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.full{width:100%;justify-content:center;padding:12px 14px;font-weight:600}
+.btn.sm{padding:5px 10px;font-size:13px}
+.drop{border:1.5px dashed #cfc6b6;border-radius:12px;min-height:300px;display:grid;place-items:center;text-align:center;padding:16px;cursor:pointer;background:#fbf9f5;position:relative;overflow:hidden;transition:.15s}
+.drop.drag{border-color:var(--navy);background:#eef2f8}
+.drop img{max-width:100%;max-height:420px;border-radius:8px;display:block}
+.drop .hint{color:var(--muted);font-size:13.5px}
+.tips{margin:12px 0 0;padding-left:18px;color:var(--muted);font-size:12.5px}
+.tips li{margin:2px 0}
+.tabs{display:flex;gap:6px;background:#efebe3;padding:4px;border-radius:12px;width:max-content}
+.tab{border:0;background:transparent;padding:7px 16px;border-radius:9px;cursor:pointer;font-weight:500;color:var(--muted)}
+.tab.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.cat-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer}
+.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.item{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden;cursor:pointer;position:relative;transition:.15s;display:flex;flex-direction:column}
+.item:hover{border-color:#cbbfa9;transform:translateY(-1px)}
+.item.sel{border-color:var(--navy);box-shadow:0 0 0 2px var(--navy)}
+.item .img{aspect-ratio:3/4;background:#fff;display:grid;place-items:center;border-bottom:1px solid var(--line)}
+.item .img img{width:100%;height:100%;object-fit:contain}
+.item .meta{padding:8px 10px}
+.item .name{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .tag{font-size:11px;color:var(--muted)}
+.item .check{position:absolute;top:8px;left:8px;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;display:none;place-items:center;font-size:13px}
+.item.sel .check{display:grid}
+.item .del{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:#fff;display:grid;place-items:center;font-size:14px;cursor:pointer;opacity:0;transition:.15s}
+.item:hover .del{opacity:1}
+.item .demo{position:absolute;bottom:52px;right:6px;font-size:10px;background:#f3efe7;color:var(--muted);border-radius:6px;padding:1px 6px}
+.add-card{border:1.5px dashed #cfc6b6;border-radius:12px;display:grid;place-items:center;text-align:center;padding:14px;cursor:pointer;color:var(--muted);min-height:230px;background:#fbf9f5}
+.add-card:hover{border-color:var(--navy);color:var(--navy)}
+.add-card .plus{font-size:34px;line-height:1;font-family:"Cormorant Garamond",serif}
+.empty{grid-column:1/-1;padding:26px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.slots{display:grid;gap:8px;margin-bottom:12px}
+.slot{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff;min-height:58px}
+.slot .thumb{width:40px;height:52px;border-radius:6px;background:#f3efe7;flex:none;display:grid;place-items:center;overflow:hidden;font-size:11px;color:var(--muted)}
+.slot .thumb img{width:100%;height:100%;object-fit:contain;background:#fff}
+.slot .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.slot .val{font-size:13.5px;font-weight:500}
+.slot .x{margin-left:auto}
+.slot.dim{opacity:.55}
+.note{font-size:12.5px;border-radius:10px;padding:9px 11px;background:#f3efe7;color:var(--muted);margin:10px 0}
+.note.warn{background:#fdf5e6;color:var(--warn)}
+.note.err{background:#fbecea;color:var(--err)}
+.progress{margin-top:14px;display:grid;gap:6px}
+.prow{display:flex;gap:8px;align-items:flex-start;font-size:13px}
+.prow .dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:none;background:#cfc6b6}
+.prow.run .dot{background:var(--gold);animation:pulse 1s infinite}
+.prow.done .dot{background:var(--ok)}
+.prow.fail .dot{background:var(--err)}
+@keyframes pulse{50%{opacity:.35}}
+.results{margin-top:22px}
+.result{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);margin-bottom:16px}
+.result-main{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.result-main figure{margin:0}
+.result-main img{width:100%;border-radius:10px;border:1px solid var(--line);background:#fff;display:block}
+.result-main figcaption{font-size:12px;color:var(--muted);margin-top:4px;text-align:center}
+.passes{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.passes figure{margin:0;width:78px}
+.passes img{width:78px;border-radius:6px;border:1px solid var(--line)}
+.passes figcaption{font-size:10.5px;color:var(--muted);text-align:center}
+.result-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.modal-bg{position:fixed;inset:0;background:rgba(20,22,28,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:var(--card);border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal h3{font-size:24px;margin-bottom:4px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.field{display:grid;gap:4px;margin:10px 0;flex:1;min-width:150px}
+.field label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.field input,.field select{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 12px;cursor:pointer;font-size:13px}
+.seg button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.pick{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 10px}
+.pick .opt{flex:none;width:104px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;overflow:hidden;text-align:center;font-size:12px}
+.pick .opt img{width:100%;aspect-ratio:3/4;object-fit:contain;display:block;border-bottom:1px solid var(--line)}
+.pick .opt.on{border-color:var(--navy);box-shadow:0 0 0 2px var(--navy)}
+.pick .opt .own{aspect-ratio:3/4;display:grid;place-items:center;padding:8px;color:var(--muted);border-bottom:1px solid var(--line);background:#fbf9f5}
+.pick .opt span{display:block;padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.add-drop{min-height:220px}
+.switch{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:13.5px}
+.switch input{width:18px;height:18px;accent-color:var(--navy)}
+code{background:#efebe3;padding:1px 5px;border-radius:5px;font-size:12.5px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><h1>Tailor Try-On</h1><span>Test studio</span></div>
+  <div class="hdr-right">
+    <span id="connPill" class="pill">Not connected</span>
+    <button class="btn" id="settingsBtn">Settings</button>
+  </div>
+</header>
+
+<main>
+  <!-- Step 1: photo -->
+  <section class="col-photo">
+    <div class="panel">
+      <div class="step"><b>1</b><h2>Your photo</h2></div>
+      <div class="drop" id="personDrop" tabindex="0">
+        <div class="hint" id="personHint">
+          <div style="font-size:28px;font-family:'Cormorant Garamond',serif">Upload a full-body photo</div>
+          Click, drag a file here, or paste with Ctrl+V
+        </div>
+      </div>
+      <input type="file" id="personFile" accept="image/*" hidden>
+      <div id="photoCheck"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn sm" id="personChange">Change photo</button>
+        <button class="btn sm" id="personSample">Use demo person</button>
+      </div>
+      <ul class="tips">
+        <li>Stand straight, facing the camera, full body in frame</li>
+        <li>Plain background, good light, one person only</li>
+        <li>Arms by your sides, not crossed over the body</li>
+        <li>Fitted clothes give more accurate results</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Step 2: catalog -->
+  <section class="col-cat">
+    <div class="panel">
+      <div class="cat-head">
+        <div class="step" style="margin:0"><b>2</b><h2>Catalogue</h2></div>
+        <div class="tabs" id="genderTabs">
+          <button class="tab on" data-g="men">Men</button>
+          <button class="tab" data-g="women">Women</button>
+        </div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="grid" id="grid"></div>
+      <p class="small muted" style="margin:14px 0 0">Tip: on Google Images, right-click a product photo → <b>Copy image</b>, then press <b>Ctrl+V</b> anywhere on this page to add it. Product shots on a white background work best.</p>
+    </div>
+  </section>
+
+  <!-- Step 3: outfit -->
+  <section class="col-outfit">
+    <div class="panel">
+      <div class="step"><b>3</b><h2>Your outfit</h2></div>
+      <div class="slots" id="slots"></div>
+      <div id="passInfo" class="note"></div>
+      <button class="btn primary full" id="tryBtn">Try it on</button>
+      <button class="btn full ghost small" id="cancelBtn" style="display:none;margin-top:6px">Cancel</button>
+      <div class="progress" id="progress"></div>
+    </div>
+  </section>
+</main>
+
+<div style="max-width:1500px;margin:-40px auto 60px;padding:0 28px" class="results" id="results"></div>
+
+<!-- Add item modal -->
+<div class="modal-bg" id="addModal">
+  <div class="modal">
+    <h3>Add a garment</h3>
+    <p class="small muted" style="margin:0 0 12px">Paste an image you copied from Google (Ctrl+V), drop a file, choose a file, or paste an image link.</p>
+    <div class="drop add-drop" id="addDrop" tabindex="0"><div class="hint">Paste (Ctrl+V), drop or click to choose an image</div></div>
+    <input type="file" id="addFile" accept="image/*" hidden>
+    <div class="row">
+      <div class="field" style="flex:3"><label>…or image link</label><input id="addUrl" placeholder="https://…/blazer.jpg"></div>
+      <div class="field" style="flex:0;min-width:auto;align-self:end"><button class="btn" id="addUrlBtn">Load</button></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Name</label><input id="addName" placeholder="e.g. Black slim-fit blazer"></div>
+    </div>
+    <div class="field"><label>For</label><div class="seg" id="addGender">
+      <button data-v="men" class="on">Men</button><button data-v="women">Women</button><button data-v="any">Both</button></div></div>
+    <div class="field"><label>Type</label><div class="seg" id="addSlot"></div></div>
+    <div class="field" id="kitAsField" style="display:none"><label>Full kit covers</label><div class="seg" id="addKitAs">
+      <button data-v="one-pieces" class="on">Whole body (jacket + trousers)</button><button data-v="tops">Upper body only</button></div></div>
+    <div class="field"><label>Photo style</label><div class="seg" id="addPhoto">
+      <button data-v="flat-lay" class="on">Product shot / flat-lay</button><button data-v="model">Worn by a model</button></div></div>
+    <div id="addErr" class="note err" style="display:none"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close="addModal">Cancel</button>
+      <button class="btn primary" id="addSave">Add to catalogue</button>
+    </div>
+  </div>
+</div>
+
+<!-- Complete the look modal -->
+<div class="modal-bg" id="lookModal">
+  <div class="modal">
+    <h3>Complete the look</h3>
+    <p class="small muted" style="margin:0 0 6px">You picked a blazer. Which shirt and trousers should go with it?</p>
+    <div id="lookBody"></div>
+    <div class="modal-foot">
+      <button class="btn" data-close="lookModal">Back</button>
+      <button class="btn primary" id="lookGo" disabled>Continue and try on</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-bg" id="setModal">
+  <div class="modal">
+    <h3>Settings</h3>
+    <p class="small muted" style="margin:0 0 8px">These are saved in this browser only.</p>
+    <div class="field"><label>Hugging Face Space</label><input id="sSpace"></div>
+    <div class="field"><label>Hugging Face token (optional, free)</label><input id="sToken" type="password" placeholder="hf_…"></div>
+    <p class="small muted" style="margin:-4px 0 8px">Without a token you share the anonymous free GPU quota (about 2 GPU-minutes a day). With a free account token you get about 5 minutes. Create a <b>Read</b> token at huggingface.co → Settings → Access Tokens.</p>
+    <div class="row">
+      <div class="field"><label>Quality steps (10–50)</label><input id="sSteps" type="number" min="10" max="50" step="5"></div>
+      <div class="field"><label>Guidance (1.0–3.0)</label><input id="sGuide" type="number" min="1" max="3" step="0.1"></div>
+      <div class="field"><label>Seed</label><input id="sSeed" type="number"></div>
+    </div>
+    <label class="switch"><input type="checkbox" id="sLayer"> Put the shirt on first, then the blazer (one extra pass, better collar and tie)</label>
+    <label class="switch"><input type="checkbox" id="sSegFree"> Volume mode (recommended): keeps your body and pose from the photo, good for blazers. Off = clean replace: fully removes the clothes in the photo, but needs a good full-body photo.</label>
+    <div class="modal-foot">
+      <button class="btn" id="sReset">Reset</button>
+      <button class="btn" id="sClearCat">Clear my catalogue</button>
+      <button class="btn primary" id="sSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+/* ---------------- Config ---------------- */
+// segFree=true ("volume mode") keeps the person's body and pose from the photo; built for bulky garments like blazers.
+// Tested on a good front-facing photo: both modes stay front-facing. On a poor photo (head cut off, hands in pockets)
+// clean replace redrew the body from behind, so volume is the safer default and clean replace is a retry option.
+// steps=50: free GPU quota is charged per request, not per step, so max quality costs nothing extra.
+const DEFAULTS = { space: "fashn-ai/fashn-vton-1.5", token: "", steps: 50, guidance: 1.5, seed: 42, layerShirt: true, segFree: true };
+const SETTINGS_KEY = "tt_settings_v3";
+const DEMO_BASE = "https://huggingface.co/spaces/fashn-ai/fashn-vton-1.5/resolve/main/assets/examples/";
+const DEMO_PERSON = DEMO_BASE + "person0.png";
+const DEMO_ITEMS = [
+  { id: "demo-g7", name: "Demo black T-shirt (product shot)", gender: "men", slot: "shirt", photoType: "flat-lay", url: DEMO_BASE + "garment7.jpg",  demo: true },
+  { id: "demo-g0", name: "Demo black T-shirt (on model)",     gender: "men", slot: "shirt", photoType: "model",    url: DEMO_BASE + "garment0.png",  demo: true },
+  { id: "demo-g3", name: "Demo crop top (product shot)",      gender: "women", slot: "shirt",    photoType: "flat-lay", url: DEMO_BASE + "garment3.jpeg", demo: true },
+  { id: "demo-g5", name: "Demo skirt (product shot)",         gender: "women", slot: "trousers", photoType: "flat-lay", url: DEMO_BASE + "garment5.jpeg", demo: true },
+];
+const SLOTS = ["kit", "blazer", "shirt", "trousers"];
+const SLOT_LABEL = {
+  men:   { kit: "Full suits & kits", blazer: "Blazers & jackets", shirt: "Shirts", trousers: "Trousers" },
+  women: { kit: "Suits, dresses & kits", blazer: "Blazers & jackets", shirt: "Shirts & blouses", trousers: "Trousers & skirts" },
+};
+const SLOT_SHORT = { kit: "Full kit", blazer: "Blazer", shirt: "Shirt", trousers: "Trousers" };
+
+/* ---------------- Helpers ---------------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uid = () => "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const categoryOf = (item) => item.slot === "kit" ? (item.kitAs || "one-pieces") : item.slot === "trousers" ? "bottoms" : "tops";
+
+function loadSettings() {
+  try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") }; } catch { return { ...DEFAULTS }; }
+}
+function saveSettings(s) { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch {} }
+
+/** Downscale an image blob and flatten transparency onto white. Returns a JPEG blob. */
+async function normalizeImage(blob, maxSide = 1024) {
+  const bmp = await createImageBitmap(blob);
+  const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+  const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(bmp, 0, 0, w, h);
+  bmp.close?.();
+  return await new Promise((res, rej) => c.toBlob((b) => b ? res(b) : rej(new Error("Could not read image")), "image/jpeg", 0.92));
+}
+
+async function fetchBlob(url) {
+  const r = await fetch(url, { mode: "cors" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const b = await r.blob();
+  if (!b.type.startsWith("image/")) throw new Error("Not an image");
+  return b;
+}
+
+/* ---------------- Storage (IndexedDB, falls back to memory) ---------------- */
+const store = {
+  db: null,
+  async open() {
+    try {
+      this.db = await new Promise((res, rej) => {
+        const r = indexedDB.open("tailor-tryon", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("items", { keyPath: "id" });
+        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+      });
+    } catch { this.db = null; }
+  },
+  tx(mode) { return this.db.transaction("items", mode).objectStore("items"); },
+  async all() {
+    if (!this.db) return [];
+    return new Promise((res) => { const r = this.tx("readonly").getAll(); r.onsuccess = () => res(r.result || []); r.onerror = () => res([]); });
+  },
+  async put(item) { if (!this.db) return; return new Promise((res) => { const r = this.tx("readwrite").put(item); r.onsuccess = r.onerror = () => res(); }); },
+  async del(id) { if (!this.db) return; return new Promise((res) => { const r = this.tx("readwrite").delete(id); r.onsuccess = r.onerror = () => res(); }); },
+  async clear() { if (!this.db) return; return new Promise((res) => { const r = this.tx("readwrite").clear(); r.onsuccess = r.onerror = () => res(); }); },
+};
+
+/* ---------------- State ---------------- */
+const state = {
+  gender: "men", filter: "all",
+  items: [], srcCache: new Map(),
+  outfit: { kit: null, blazer: null, shirt: null, trousers: null },
+  keepOwn: { shirt: false, trousers: false },
+  person: null,            // { blob, url }
+  settings: loadSettings(),
+  running: false, job: null, cancelled: false,
+  conn: null,              // { key, client, endpoint }
+  resultCount: 0,
+};
+
+function srcOf(item) {
+  if (item.url && !item.blob) return item.url;
+  if (!state.srcCache.has(item.id)) state.srcCache.set(item.id, URL.createObjectURL(item.blob));
+  return state.srcCache.get(item.id);
+}
+const itemById = (id) => state.items.find((i) => i.id === id);
+const visibleItems = () => state.items.filter((i) => i.gender === "any" || i.gender === state.gender);
+
+/* ---------------- Catalogue UI ---------------- */
+function renderChips() {
+  const labels = SLOT_LABEL[state.gender];
+  const chips = [["all", "All"], ...SLOTS.map((s) => [s, labels[s]])];
+  $("#chips").innerHTML = chips.map(([v, l]) => `<button class="chip ${state.filter === v ? "on" : ""}" data-f="${v}">${esc(l)}</button>`).join("");
+}
+function renderGrid() {
+  const list = visibleItems().filter((i) => state.filter === "all" || i.slot === state.filter);
+  const selected = new Set(Object.values(state.outfit).filter(Boolean));
+  const cards = list.map((i) => `
+    <div class="item ${selected.has(i.id) ? "sel" : ""}" data-id="${i.id}">
+      <div class="check">✓</div>
+      ${i.demo ? "" : `<button class="del" title="Remove" data-del="${i.id}">×</button>`}
+      <div class="img"><img src="${esc(srcOf(i))}" alt="" loading="lazy" onerror="this.closest('.item').style.display='none'"></div>
+      ${i.demo ? `<span class="demo">demo</span>` : ""}
+      <div class="meta"><div class="name">${esc(i.name)}</div><div class="tag">${esc(SLOT_LABEL[state.gender][i.slot])}</div></div>
+    </div>`).join("");
+  const add = `<div class="add-card" id="addCard"><div><div class="plus">+</div><div style="font-weight:500">Add garment</div><div class="small">Paste from Google, upload or link</div></div></div>`;
+  const empty = list.length ? "" : `<div class="empty">No ${state.filter === "all" ? "items" : esc(SLOT_LABEL[state.gender][state.filter].toLowerCase())} yet for ${state.gender}. Copy a product photo from Google and press Ctrl+V.</div>`;
+  $("#grid").innerHTML = empty + cards + add;
+}
+function renderCatalog() { renderChips(); renderGrid(); }
+
+$("#genderTabs").addEventListener("click", (e) => {
+  const b = e.target.closest(".tab"); if (!b) return;
+  state.gender = b.dataset.g;
+  $$("#genderTabs .tab").forEach((t) => t.classList.toggle("on", t === b));
+  // Drop outfit items that don't belong to this gender
+  for (const s of SLOTS) { const it = itemById(state.outfit[s]); if (it && it.gender !== "any" && it.gender !== state.gender) state.outfit[s] = null; }
+  renderCatalog(); renderOutfit();
+});
+$("#chips").addEventListener("click", (e) => { const c = e.target.closest(".chip"); if (!c) return; state.filter = c.dataset.f; renderCatalog(); });
+$("#grid").addEventListener("click", async (e) => {
+  const del = e.target.closest("[data-del]");
+  if (del) {
+    e.stopPropagation();
+    const id = del.dataset.del;
+    state.items = state.items.filter((i) => i.id !== id);
+    for (const s of SLOTS) if (state.outfit[s] === id) state.outfit[s] = null;
+    await store.del(id); renderCatalog(); renderOutfit(); return;
+  }
+  if (e.target.closest("#addCard")) { openAdd(); return; }
+  const card = e.target.closest(".item"); if (!card) return;
+  toggleSelect(itemById(card.dataset.id));
+});
+
+function toggleSelect(item) {
+  if (!item) return;
+  const s = item.slot;
+  if (state.outfit[s] === item.id) { state.outfit[s] = null; }
+  else {
+    state.outfit[s] = item.id;
+    if (s === "kit") { state.outfit.blazer = state.outfit.shirt = state.outfit.trousers = null; }
+    else state.outfit.kit = null;
+    if (s === "shirt") state.keepOwn.shirt = false;
+    if (s === "trousers") state.keepOwn.trousers = false;
+  }
+  renderGrid(); renderOutfit();
+}
+
+/* ---------------- Outfit UI ---------------- */
+function plannedPasses() {
+  const o = state.outfit, s = state.settings;
+  if (o.kit) return [itemById(o.kit)];
+  const passes = [];
+  if (o.trousers) passes.push(itemById(o.trousers));
+  if (o.shirt && (!o.blazer || s.layerShirt)) passes.push(itemById(o.shirt));
+  if (o.blazer) passes.push(itemById(o.blazer));
+  return passes.filter(Boolean);
+}
+function renderOutfit() {
+  const o = state.outfit;
+  const rows = SLOTS.map((slot) => {
+    const it = itemById(o[slot]);
+    const dim = (slot === "kit" && (o.blazer || o.shirt || o.trousers)) || (slot !== "kit" && o.kit);
+    let val = it ? esc(it.name) : `<span class="muted">${slot === "kit" ? "Optional — a complete suit in one photo" : (state.keepOwn[slot] ? "Keep what I'm wearing" : "Not selected")}</span>`;
+    return `<div class="slot ${dim ? "dim" : ""}">
+      <div class="thumb">${it ? `<img src="${esc(srcOf(it))}" alt="">` : "—"}</div>
+      <div><div class="lbl">${SLOT_SHORT[slot]}</div><div class="val">${val}</div></div>
+      ${it ? `<button class="btn sm ghost x" data-clear="${slot}">Remove</button>` : ""}
+    </div>`;
+  }).join("");
+  $("#slots").innerHTML = rows;
+
+  const passes = plannedPasses();
+  const info = $("#passInfo");
+  if (!passes.length) { info.className = "note"; info.innerHTML = "Pick a full kit, or a blazer / shirt / trousers from the catalogue."; }
+  else {
+    const order = passes.map((p) => SLOT_SHORT[p.slot]).join(" → ");
+    info.className = passes.length > 2 ? "note warn" : "note";
+    info.innerHTML = `<b>${passes.length} pass${passes.length > 1 ? "es" : ""}:</b> ${esc(order)}<br>Each pass uses about 1 minute of free GPU time.`;
+    if (o.shirt && o.blazer && !state.settings.layerShirt) info.innerHTML += "<br>Shirt layering is off, so the shirt won't be applied separately (see Settings).";
+  }
+  $("#tryBtn").disabled = state.running || (!passes.length && !o.blazer) || (state.person && photoBlocked());
+  $("#tryBtn").textContent = state.person && state.photoCheck?.pending ? "Checking your photo…" : "Try it on";
+}
+$("#slots").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-clear]"); if (!b) return;
+  state.outfit[b.dataset.clear] = null; renderGrid(); renderOutfit();
+});
+
+/* ---------------- Person photo ---------------- */
+async function setPerson(blob) {
+  try {
+    const norm = await normalizeImage(blob, 1280);
+    if (state.person) URL.revokeObjectURL(state.person.url);
+    state.person = { blob: norm, url: URL.createObjectURL(norm) };
+    $("#personDrop").innerHTML = `<img src="${state.person.url}" alt="Your photo">`;
+    checkPhoto(norm);
+  } catch (err) {
+    $("#personDrop").innerHTML = `<div class="hint" style="color:var(--err)">Couldn't read that image.<br>Please use a JPG or PNG photo (iPhone HEIC photos aren't supported — export as JPG first).</div>`;
+    alert_("Couldn't read that photo. Use a JPG or PNG.");
+  }
+}
+function alert_(msg) { showProgress([{ text: msg, cls: "fail" }]); }
+
+/* ---------------- Photo check (MediaPipe pose, runs in the browser, free) ---------------- */
+let poseLandmarkerP = null;
+async function getPoseLandmarker() {
+  if (!poseLandmarkerP) poseLandmarkerP = (async () => {
+    const V = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+    const { PoseLandmarker, FilesetResolver } = await import(V);
+    const vision = await FilesetResolver.forVisionTasks(V + "/wasm");
+    return PoseLandmarker.createFromOptions(vision, {
+      baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task", delegate: "CPU" },
+      runningMode: "IMAGE", numPoses: 2,
+    });
+  })();
+  return poseLandmarkerP;
+}
+// Problems that make the AI guess wrong (e.g. drawing the person from behind) block the try-on until the
+// customer uploads a better photo or chooses "Use anyway". Smaller problems are shown as tips only.
+state.photoCheck = { pending: false, blocking: [], tips: [], override: false };
+async function checkPhoto(blob) {
+  const box = $("#photoCheck");
+  const pc = state.photoCheck = { pending: true, blocking: [], tips: [], override: false };
+  box.innerHTML = `<div class="note small">Checking your photo…</div>`;
+  renderOutfit();
+  try {
+    const bmp = await createImageBitmap(blob);
+    if (Math.min(bmp.width, bmp.height) < 700) pc.tips.push("The photo is quite small or low resolution. A sharper photo gives a more accurate result.");
+    const lm = await getPoseLandmarker();
+    const res = lm.detect(bmp);
+    bmp.close?.();
+    const poses = res?.landmarks || [];
+    const seen = (p, i) => { const k = p[i]; return k && (k.visibility ?? 1) > 0.5 && k.x > 0.01 && k.x < 0.99 && k.y > 0.01 && k.y < 0.99; };
+    if (!poses.length) pc.blocking.push("No person was found. Use a clear photo of one person standing, facing the camera.");
+    else {
+      if (poses.length > 1) pc.blocking.push("More than one person is in the photo. Use a photo with only you in it.");
+      const p = poses[0];
+      if (!seen(p, 0) || !(seen(p, 2) || seen(p, 5)) || p[0].y < 0.06) pc.blocking.push("Your face or head is cut off. The AI needs to see your face to know which way you are facing.");
+      if (!seen(p, 15) || !seen(p, 16)) pc.blocking.push("A hand is hidden (in a pocket or behind you). Stand with your arms relaxed by your sides.");
+      if (!seen(p, 27) && !seen(p, 28)) pc.tips.push("Your feet aren't visible. A head-to-feet photo works best, especially for trousers.");
+    }
+  } catch {
+    pc.tips.push("The automatic photo check couldn't run, so please make sure your photo shows your whole body, face visible, arms by your sides.");
+  }
+  if (state.photoCheck !== pc) return; // a newer photo replaced this one
+  pc.pending = false;
+  renderPhotoCheck();
+  renderOutfit();
+}
+function renderPhotoCheck() {
+  const pc = state.photoCheck, box = $("#photoCheck");
+  const list = (a) => `<ul style="margin:4px 0 0;padding-left:18px">${a.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
+  if (pc.blocking.length && !pc.override) {
+    box.innerHTML = `<div class="note err small"><b>Please use a better photo for an accurate result:</b>${list(pc.blocking)}
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" id="pcNew">Upload another photo</button><button class="btn sm ghost" id="pcAnyway">Use this photo anyway</button></div></div>`
+      + (pc.tips.length ? `<div class="note warn small">${list(pc.tips)}</div>` : "");
+    $("#pcNew").addEventListener("click", () => $("#personFile").click());
+    $("#pcAnyway").addEventListener("click", () => { pc.override = true; renderPhotoCheck(); renderOutfit(); });
+  } else if (pc.blocking.length || pc.tips.length) {
+    box.innerHTML = `<div class="note warn small"><b>Photo tips:</b>${list([...pc.blocking, ...pc.tips])}${pc.override ? "Using this photo anyway — the result may be less accurate." : ""}</div>`;
+  } else {
+    box.innerHTML = `<div class="note small" style="background:#eef7f1;color:var(--ok)">Photo looks good: one person, face visible, hands visible.</div>`;
+  }
+}
+const photoBlocked = () => state.photoCheck && (state.photoCheck.pending || (state.photoCheck.blocking.length && !state.photoCheck.override));
+const personFile = $("#personFile");
+$("#personDrop").addEventListener("click", () => personFile.click());
+$("#personChange").addEventListener("click", () => personFile.click());
+personFile.addEventListener("change", () => { if (personFile.files[0]) setPerson(personFile.files[0]); personFile.value = ""; });
+$("#personSample").addEventListener("click", async () => {
+  try { await setPerson(await fetchBlob(DEMO_PERSON)); }
+  catch { alert_("Couldn't load the demo person from Hugging Face. Upload your own photo instead."); }
+});
+setupDrop($("#personDrop"), (f) => setPerson(f));
+
+function setupDrop(el, onFile) {
+  el.addEventListener("dragover", (e) => { e.preventDefault(); el.classList.add("drag"); });
+  el.addEventListener("dragleave", () => el.classList.remove("drag"));
+  el.addEventListener("drop", async (e) => {
+    e.preventDefault(); el.classList.remove("drag");
+    const f = [...e.dataTransfer.files].find((x) => x.type.startsWith("image/"));
+    if (f) return onFile(f);
+    const url = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain");
+    if (url && /^https?:/i.test(url)) { try { onFile(await fetchBlob(url.trim())); } catch { onUrlFallback?.(url.trim()); } }
+  });
+}
+let onUrlFallback = null;
+
+/* ---------------- Add garment modal ---------------- */
+const add = { blob: null, url: null, gender: "men", slot: "blazer", photo: "flat-lay", kitAs: "one-pieces" };
+function segSetup(id, key, after) {
+  $(id).addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    add[key] = b.dataset.v;
+    $$(id + " button").forEach((x) => x.classList.toggle("on", x === b));
+    after?.();
+  });
+}
+function renderAddSlots() {
+  const labels = SLOT_LABEL[add.gender === "women" ? "women" : "men"];
+  $("#addSlot").innerHTML = SLOTS.map((s) => `<button data-v="${s}" class="${add.slot === s ? "on" : ""}">${esc(labels[s])}</button>`).join("");
+  $("#kitAsField").style.display = add.slot === "kit" ? "" : "none";
+}
+segSetup("#addGender", "gender", renderAddSlots);
+segSetup("#addSlot", "slot", renderAddSlots);
+segSetup("#addPhoto", "photo");
+segSetup("#addKitAs", "kitAs");
+
+function openAdd(blob) {
+  add.blob = null; add.url = null; add.gender = state.gender;
+  add.slot = state.filter !== "all" ? state.filter : "blazer";
+  $$("#addGender button").forEach((x) => x.classList.toggle("on", x.dataset.v === add.gender));
+  renderAddSlots();
+  $("#addName").value = ""; $("#addUrl").value = ""; $("#addErr").style.display = "none";
+  $("#addDrop").innerHTML = `<div class="hint">Paste (Ctrl+V), drop or click to choose an image</div>`;
+  $("#addModal").classList.add("open");
+  if (blob) setAddBlob(blob);
+}
+async function setAddBlob(blob) {
+  try {
+    add.blob = await normalizeImage(blob, 1024); add.url = null;
+    $("#addDrop").innerHTML = `<img src="${URL.createObjectURL(add.blob)}" alt="">`;
+    $("#addErr").style.display = "none";
+  } catch (e) { showAddErr("Couldn't read that image."); }
+}
+function setAddUrlOnly(url) {
+  // The browser can't read this image directly (blocked by the other site), but the AI server may still download it.
+  add.blob = null; add.url = url;
+  $("#addDrop").innerHTML = `<img src="${esc(url)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'hint',textContent:'Preview unavailable — the link will be sent as-is.'}))">`;
+  showAddErr("That site blocks direct reading, so the link will be sent to the AI as-is. If try-on fails, use “Copy image” + Ctrl+V instead.", "warn");
+}
+function showAddErr(msg, kind = "err") { const el = $("#addErr"); el.className = "note " + kind; el.textContent = msg; el.style.display = ""; }
+const addFile = $("#addFile");
+$("#addDrop").addEventListener("click", () => addFile.click());
+addFile.addEventListener("change", () => { if (addFile.files[0]) setAddBlob(addFile.files[0]); addFile.value = ""; });
+setupDrop($("#addDrop"), (f) => setAddBlob(f));
+onUrlFallback = (url) => { if ($("#addModal").classList.contains("open")) setAddUrlOnly(url); };
+$("#addUrlBtn").addEventListener("click", async () => {
+  const url = $("#addUrl").value.trim();
+  if (!/^https?:\/\//i.test(url)) return showAddErr("Enter a link starting with http:// or https://");
+  try { await setAddBlob(await fetchBlob(url)); } catch { setAddUrlOnly(url); }
+});
+$("#addSave").addEventListener("click", async () => {
+  if (!add.blob && !add.url) return showAddErr("Add an image first.");
+  const item = {
+    id: uid(), name: $("#addName").value.trim() || `${SLOT_SHORT[add.slot]} ${state.items.filter((i) => !i.demo).length + 1}`,
+    gender: add.gender, slot: add.slot, photoType: add.photo, created: Date.now(),
+  };
+  if (add.slot === "kit") item.kitAs = add.kitAs;
+  if (add.blob) item.blob = add.blob; else item.url = add.url;
+  state.items.unshift(item);
+  await store.put(item);
+  closeModal("addModal");
+  if (item.gender !== "any" && item.gender !== state.gender) $(`#genderTabs .tab[data-g="${item.gender}"]`).click();
+  renderCatalog(); renderOutfit();
+});
+
+/* Global paste: add garment (or set person photo if none yet and no modal open) */
+document.addEventListener("paste", async (e) => {
+  if (e.target.matches?.("input")) return;
+  const items = [...(e.clipboardData?.items || [])];
+  const img = items.find((i) => i.type.startsWith("image/"));
+  const blob = img?.getAsFile();
+  const text = e.clipboardData?.getData("text")?.trim();
+  if (!blob && !(text && /^https?:\/\//i.test(text))) return;
+  e.preventDefault();
+  if ($("#addModal").classList.contains("open")) {
+    if (blob) return setAddBlob(blob);
+    try { await setAddBlob(await fetchBlob(text)); } catch { setAddUrlOnly(text); }
+    return;
+  }
+  if (document.activeElement === $("#personDrop") && blob) return setPerson(blob);
+  if (blob) return openAdd(blob);
+  openAdd(); try { await setAddBlob(await fetchBlob(text)); } catch { setAddUrlOnly(text); }
+});
+
+/* ---------------- Modals ---------------- */
+function closeModal(id) { $("#" + id).classList.remove("open"); }
+document.addEventListener("click", (e) => {
+  const c = e.target.closest("[data-close]"); if (c) closeModal(c.dataset.close);
+  if (e.target.classList.contains("modal-bg")) e.target.classList.remove("open");
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") $$(".modal-bg.open").forEach((m) => m.classList.remove("open")); });
+
+/* ---------------- Complete-the-look modal ---------------- */
+const look = { shirt: undefined, trousers: undefined }; // id | "own" | undefined
+function needsLook() {
+  const o = state.outfit;
+  return o.blazer && ((!o.shirt && !state.keepOwn.shirt) || (!o.trousers && !state.keepOwn.trousers));
+}
+function openLook() {
+  look.shirt = state.outfit.shirt || (state.keepOwn.shirt ? "own" : undefined);
+  look.trousers = state.outfit.trousers || (state.keepOwn.trousers ? "own" : undefined);
+  renderLook(); $("#lookModal").classList.add("open");
+}
+function renderLook() {
+  const labels = SLOT_LABEL[state.gender];
+  const sec = (slot, ownText) => {
+    const opts = visibleItems().filter((i) => i.slot === slot);
+    return `<h4 style="margin:14px 0 6px;font-weight:600">${esc(labels[slot])}</h4>
+      <div class="pick" data-slot="${slot}">
+        ${opts.map((i) => `<div class="opt ${look[slot] === i.id ? "on" : ""}" data-v="${i.id}"><img src="${esc(srcOf(i))}" alt="" onerror="this.closest('.opt').style.display='none'"><span>${esc(i.name)}</span></div>`).join("")}
+        <div class="opt ${look[slot] === "own" ? "on" : ""}" data-v="own"><div class="own">${ownText}</div><span>Keep my own</span></div>
+      </div>${opts.length ? "" : `<p class="small muted" style="margin:0">No ${esc(labels[slot].toLowerCase())} in the catalogue yet — add some, or keep your own.</p>`}`;
+  };
+  $("#lookBody").innerHTML = sec("shirt", "Keep the shirt in my photo") + sec("trousers", "Keep the trousers in my photo");
+  $("#lookGo").disabled = !(look.shirt && look.trousers);
+}
+$("#lookBody").addEventListener("click", (e) => {
+  const o = e.target.closest(".opt"); if (!o) return;
+  look[o.closest(".pick").dataset.slot] = o.dataset.v; renderLook();
+});
+$("#lookGo").addEventListener("click", () => {
+  for (const s of ["shirt", "trousers"]) {
+    if (look[s] === "own") { state.keepOwn[s] = true; state.outfit[s] = null; }
+    else { state.keepOwn[s] = false; state.outfit[s] = look[s]; }
+  }
+  closeModal("lookModal"); renderGrid(); renderOutfit(); runTryOn();
+});
+
+/* ---------------- Settings ---------------- */
+function openSettings() {
+  const s = state.settings;
+  $("#sSpace").value = s.space; $("#sToken").value = s.token; $("#sSteps").value = s.steps;
+  $("#sGuide").value = s.guidance; $("#sSeed").value = s.seed; $("#sLayer").checked = s.layerShirt; $("#sSegFree").checked = s.segFree;
+  $("#setModal").classList.add("open");
+}
+$("#settingsBtn").addEventListener("click", openSettings);
+$("#sSave").addEventListener("click", () => {
+  const clamp = (v, a, b, d) => { v = Number(v); return Number.isFinite(v) ? Math.min(b, Math.max(a, v)) : d; };
+  state.settings = {
+    space: $("#sSpace").value.trim() || DEFAULTS.space, token: $("#sToken").value.trim(),
+    steps: Math.round(clamp($("#sSteps").value, 10, 50, DEFAULTS.steps) / 5) * 5,
+    guidance: clamp($("#sGuide").value, 1, 3, DEFAULTS.guidance), seed: Math.round(clamp($("#sSeed").value, 0, 2 ** 31, DEFAULTS.seed)),
+    layerShirt: $("#sLayer").checked, segFree: $("#sSegFree").checked,
+  };
+  saveSettings(state.settings); state.conn = null; setConn("Not connected");
+  closeModal("setModal"); renderOutfit();
+});
+$("#sReset").addEventListener("click", () => { state.settings = { ...DEFAULTS }; saveSettings(state.settings); openSettings(); state.conn = null; renderOutfit(); });
+$("#sClearCat").addEventListener("click", async () => {
+  await store.clear(); state.items = state.items.filter((i) => i.demo);
+  for (const s of SLOTS) if (!itemById(state.outfit[s])) state.outfit[s] = null;
+  renderCatalog(); renderOutfit();
+});
+function setConn(text, cls = "") { const p = $("#connPill"); p.textContent = text; p.className = "pill " + cls; }
+
+/* ---------------- Gradio client ---------------- */
+let gradio = null;
+async function loadGradio() {
+  if (gradio) return gradio;
+  const sources = ["https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js", "https://esm.sh/@gradio/client"];
+  let lastErr;
+  for (const src of sources) { try { gradio = await import(src); return gradio; } catch (e) { lastErr = e; } }
+  throw new Error("Couldn't load the Gradio client library (" + (lastErr?.message || "network") + ")");
+}
+async function getConnection() {
+  const s = state.settings, key = s.space + "|" + s.token;
+  if (state.conn?.key === key) return state.conn;
+  const { Client } = await loadGradio();
+  setConn("Connecting…");
+  const client = await Client.connect(s.space, s.token ? { hf_token: s.token } : {});
+  let endpoint = "/try_on";
+  try {
+    const api = await client.view_api();
+    const named = Object.keys(api?.named_endpoints || {});
+    if (named.length && !named.includes(endpoint)) {
+      endpoint = named.find((n) => /try/i.test(n)) || named.find((n) => (api.named_endpoints[n].parameters || []).length >= 8) || named[0];
+    } else if (!named.length && api?.unnamed_endpoints && Object.keys(api.unnamed_endpoints).length) {
+      endpoint = Number(Object.keys(api.unnamed_endpoints)[0]);
+    }
+  } catch { /* keep default */ }
+  state.conn = { key, client, endpoint };
+  setConn("Connected · " + s.space.split("/").pop(), "ok");
+  return state.conn;
+}
+
+function friendlyError(err) {
+  const m = String(err?.message || err || "");
+  if (/quota/i.test(m)) return "Free GPU quota used up for today. Add your free Hugging Face token in Settings (more minutes), or try again tomorrow.";
+  if (/no gpu|gpu.*(busy|available)/i.test(m)) return "All free GPUs are busy right now. Wait a minute and try again.";
+  if (/sleep|paused|building|starting/i.test(m)) return "The Space is starting up. Try again in a minute or two.";
+  if (/fetch|network|cors|failed to/i.test(m)) return "Couldn't reach Hugging Face. Check your internet connection, or open this page through a local server (see the instructions).";
+  return m || "Something went wrong.";
+}
+
+/* ---------------- Try-on run ---------------- */
+let progressRows = [];
+function showProgress(rows) {
+  progressRows = rows;
+  $("#progress").innerHTML = rows.map((r) => `<div class="prow ${r.cls || ""}"><span class="dot"></span><span>${r.html ?? esc(r.text)}</span></div>`).join("");
+}
+function setRow(i, patch) { progressRows[i] = { ...progressRows[i], ...patch }; showProgress(progressRows); }
+
+async function garmentInput(item, handle_file) {
+  if (item.blob) return handle_file(item.blob);
+  try { return handle_file(await normalizeImage(await fetchBlob(item.url), 1024)); }
+  catch { return handle_file(item.url); } // let the Space download it
+}
+
+async function runPass(conn, personBlob, item, rowIdx) {
+  const { handle_file } = await loadGradio();
+  const s = state.settings;
+  const segFree = state.segOverride ?? s.segFree;
+  const data = [handle_file(personBlob), await garmentInput(item, handle_file), categoryOf(item), item.photoType || "flat-lay", s.steps, s.guidance, s.seed, segFree];
+  const job = conn.client.submit(conn.endpoint, data);
+  state.job = job;
+  let out = null;
+  for await (const msg of job) {
+    if (state.cancelled) break;
+    if (msg.type === "status") {
+      if (msg.stage === "error") throw new Error(msg.message || "The Space returned an error");
+      if (msg.stage === "pending" && msg.position != null) setRow(rowIdx, { text: `${SLOT_SHORT[item.slot]}: waiting in queue (position ${msg.position + 1}${msg.eta ? `, ~${Math.round(msg.eta)}s` : ""})` });
+      else if (msg.stage === "pending" || msg.stage === "generating") setRow(rowIdx, { text: `${SLOT_SHORT[item.slot]}: generating…` });
+    }
+    if (msg.type === "data") { out = msg.data; break; }
+  }
+  if (state.cancelled) throw new Error("Cancelled");
+  const file = out?.[0];
+  const url = typeof file === "string" ? file : file?.url;
+  if (!url) throw new Error("The Space didn't return an image");
+  return await fetchBlob(url);
+}
+
+async function runTryOn() {
+  if (state.running) return;
+  if (!state.person) { alert_("Upload your photo first (step 1)."); return; }
+  if (photoBlocked()) {
+    state.segOverride = undefined;
+    alert_(state.photoCheck.pending ? "Still checking your photo — try again in a moment." : "Your photo needs fixing first (see the message under your photo).");
+    return;
+  }
+  if (needsLook()) { openLook(); return; }
+  const passes = plannedPasses();
+  if (!passes.length) { alert_("Pick at least one item from the catalogue."); return; }
+
+  state.running = true; state.cancelled = false; renderOutfit();
+  $("#cancelBtn").style.display = "";
+  showProgress([{ text: "Connecting to the free AI Space…", cls: "run" }, ...passes.map((p) => ({ text: `${SLOT_SHORT[p.slot]}: ${p.name}` }))]);
+
+  const original = state.person.url;
+  const steps = [];
+  let current = state.person.blob;
+  try {
+    const conn = await getConnection();
+    setRow(0, { text: "Connected", cls: "done" });
+    for (let i = 0; i < passes.length; i++) {
+      setRow(i + 1, { cls: "run", text: `${SLOT_SHORT[passes[i].slot]}: starting…` });
+      const t0 = performance.now();
+      current = await runPass(conn, current, passes[i], i + 1);
+      const secs = ((performance.now() - t0) / 1000).toFixed(0);
+      steps.push({ item: passes[i], url: URL.createObjectURL(current) });
+      setRow(i + 1, { cls: "done", text: `${SLOT_SHORT[passes[i].slot]}: done in ${secs}s` });
+    }
+    addResult(original, steps, current, false, state.segOverride ?? state.settings.segFree);
+  } catch (err) {
+    const idx = progressRows.findIndex((r) => r.cls === "run");
+    if (idx >= 0) setRow(idx, { cls: "fail", text: friendlyError(err) });
+    else showProgress([...progressRows, { cls: "fail", text: friendlyError(err) }]);
+    if (steps.length) addResult(original, steps, current, true, state.segOverride ?? state.settings.segFree);
+    if (/fetch|network|connect/i.test(String(err?.message))) { state.conn = null; setConn("Not connected", "warn"); }
+  } finally {
+    state.running = false; state.job = null; state.segOverride = undefined; $("#cancelBtn").style.display = "none"; renderOutfit();
+  }
+}
+$("#tryBtn").addEventListener("click", runTryOn);
+$("#cancelBtn").addEventListener("click", () => { state.cancelled = true; try { state.job?.cancel?.(); } catch {} });
+
+function addResult(originalUrl, steps, finalBlob, partial, usedSegFree) {
+  const n = ++state.resultCount;
+  const finalUrl = URL.createObjectURL(finalBlob);
+  const names = steps.map((s) => s.item.name).join(" + ");
+  const el = document.createElement("div");
+  el.className = "result";
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <h3 style="font-size:22px">Try-on #${n}${partial ? " (partial)" : ""}</h3>
+      <span class="small muted">${esc(names)}</span>
+    </div>
+    <div class="result-main" style="margin-top:10px">
+      <figure><img src="${originalUrl}" alt="Before"><figcaption>Before</figcaption></figure>
+      <figure><img src="${finalUrl}" alt="After"><figcaption>After</figcaption></figure>
+    </div>
+    ${steps.length > 1 ? `<div class="passes">${steps.map((s, i) => `<figure><img src="${s.url}" alt=""><figcaption>${i + 1}. ${esc(SLOT_SHORT[s.item.slot])}</figcaption></figure>`).join("")}</div>` : ""}
+    <div class="result-actions">
+      <a class="btn sm" href="${finalUrl}" download="tryon-${n}.jpg">Download</a>
+      <button class="btn sm" data-reuse>Use this as my photo</button>
+      <button class="btn sm" data-other title="Runs the same outfit again on your current photo">Try again in ${usedSegFree ? "clean replace" : "volume"} mode</button>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">Mode used: ${usedSegFree ? "volume (keeps body shape, may leave bits of old clothes)" : "clean replace (removes the clothes in your photo)"}.</p>`;
+  el.querySelector("[data-reuse]").addEventListener("click", () => setPerson(finalBlob));
+  el.querySelector("[data-other]").addEventListener("click", () => { if (state.running) return; state.segOverride = !usedSegFree; runTryOn(); });
+  $("#results").prepend(el);
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ---------------- Init ---------------- */
+(async function init() {
+  await store.open();
+  const saved = await store.all();
+  saved.sort((a, b) => (b.created || 0) - (a.created || 0));
+  state.items = [...saved, ...DEMO_ITEMS];
+  renderCatalog(); renderOutfit();
+  if (location.protocol === "file:") {
+    showProgress([{ text: "Opened as a local file. If connecting fails, run a local server (see instructions) and open http://localhost:8000 instead." }]);
+  }
+})();
+</script>
+</body>
+</html>
