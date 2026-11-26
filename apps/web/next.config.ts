@@ -36,15 +36,8 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      {
-        // Shop admin: never cached by browsers/proxies, never indexed.
-        source: "/admin/:path*",
-        headers: [
-          { key: "Cache-Control", value: "no-store" },
-          { key: "X-Robots-Tag", value: "noindex, nofollow" },
-        ],
-      },
-      { source: "/admin", headers: [{ key: "Cache-Control", value: "no-store" }, { key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      // No special headers for /admin: it must look exactly like any other missing page. The real admin lives at
+      // the secret /<ADMIN_PATH> (app/[staff]) — rendered per request (never cached) with a noindex robots tag.
       {
         source: "/:path*",
         headers: [

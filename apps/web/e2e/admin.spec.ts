@@ -67,6 +67,12 @@ test("admin with 2FA ships an order with tracking; customer reviews; admin appro
     }
     const titleOf = async (p: string) => (await page.goto(p), await page.title());
     expect(await titleOf("/admin/orders"), "a guessed admin page looks like any missing page").toBe(await titleOf("/no-such-page-here"));
+    const headersOf = async (p: string) => {
+      const r = await page.request.get(p);
+      return { status: r.status(), cache: r.headers()["cache-control"], robots: r.headers()["x-robots-tag"] };
+    };
+    expect(await headersOf("/admin"), "same headers as any missing page").toEqual(await headersOf("/no-such-page-here"));
+    expect(await (await page.request.get("/robots.txt")).text()).not.toMatch(/admin/i);
     const home = await (await page.goto("/"))!.text();
     expect(home).not.toContain(ADMIN.slice(1));
     // A guest who somehow has the secret address is sent to sign in, not shown anything
