@@ -185,7 +185,7 @@ NEXT_PUBLIC_SHOP_ADDRESS=<shop address>
 NEXT_PUBLIC_SHOP_MAP_URL=https://maps.app.goo.gl/<your place>
 ```
 The API **refuses to start** in production with default secrets, `COOKIE_SECURE=false` or no `ADMIN_PATH`.
-`NEXT_PUBLIC_*` values are baked in at build time — after changing them, redeploy (§8). Other changes need only
+`NEXT_PUBLIC_*` values are baked in at build time — after changing them, run `bash /var/www/seamwell/repo/deploy/deploy.sh rebuild`. Other changes need only
 `pm2 restart all`.
 Free SMTP options: Brevo (300 emails/day) or Gmail with an app password (`smtps://you%40gmail.com:<app password>@smtp.gmail.com:465`).
 

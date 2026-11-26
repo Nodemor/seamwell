@@ -23,6 +23,7 @@ module.exports = {
       cwd: path.join(ROOT, "apps/api"),
       script: path.join(ROOT, "apps/api/dist/server.js"),
       node_args: `--env-file=${apiEnvFile}`,
+      exec_mode: "fork", // one plain process (PM2 picks "cluster" by itself when `instances` is set)
       instances: 1, // in-memory rate limits → keep 1 instance (see docs/02-security.md before scaling)
       max_memory_restart: "400M",
       kill_timeout: 10_000, // let in-flight requests finish (server.ts closes gracefully on SIGINT/SIGTERM)
@@ -34,6 +35,7 @@ module.exports = {
       // npm workspaces install `next` once, in the repo root's node_modules.
       script: path.join(ROOT, "node_modules/next/dist/bin/next"),
       args: ["start", webDir, "--port", "3000", "--hostname", "127.0.0.1"],
+      exec_mode: "fork",
       instances: 1,
       max_memory_restart: "700M",
       env: { NODE_ENV: "production" },

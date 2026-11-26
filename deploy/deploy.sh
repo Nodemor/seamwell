@@ -10,6 +10,7 @@
 # Usage (as the deploy user):
 #   bash /var/www/seamwell/repo/deploy/deploy.sh             deploy the latest commit on main
 #   bash /var/www/seamwell/repo/deploy/deploy.sh <sha>       deploy a specific commit (must be on main)
+#   bash /var/www/seamwell/repo/deploy/deploy.sh rebuild     rebuild + restart the live commit (after editing shared/*.env*)
 #   bash /var/www/seamwell/repo/deploy/deploy.sh rollback    switch back to the previous release (instant)
 #   bash /var/www/seamwell/repo/deploy/deploy.sh status      what's live
 # GitHub Actions runs it through a restricted SSH key (forced command "deploy.sh --from-ssh") that can only
@@ -51,6 +52,7 @@ trap 'on_error $LINENO' ERR
 # ── What to do ───────────────────────────────────────────────────────────────────────────────────────────
 MODE=deploy
 TARGET=""
+FORCE="${SEAMWELL_FORCE:-0}" # 1 = build even if this commit is already live
 if [[ "${1:-}" == "--from-ssh" ]]; then
   cmd="${SSH_ORIGINAL_COMMAND:-}"
   if [[ "$cmd" =~ ^deploy\ ([0-9a-f]{40})$ ]]; then
@@ -65,6 +67,7 @@ else
   case "${1:-}" in
     "") ;;
     rollback) MODE=rollback ;;
+    rebuild) FORCE=1 ;;
     status) MODE=status ;;
     *)
       [[ "$1" =~ ^[0-9a-f]{7,40}$ ]] || fail "Usage: deploy.sh [commit-sha | rollback | status]"
@@ -159,12 +162,12 @@ git -C "$REPO" merge --quiet --ff-only origin/main || fail "repo/ has local chan
 if [[ -z "${SEAMWELL_DEPLOY_REEXEC:-}" && "$(sha1sum "$REPO/deploy/deploy.sh" | cut -c1-40)" != "$SELF_BEFORE" ]]; then
   note "deploy.sh was updated — restarting with the new version"
   exec 9>&-
-  SEAMWELL_DEPLOY_REEXEC=1 exec bash "$REPO/deploy/deploy.sh" "$SHA"
+  SEAMWELL_DEPLOY_REEXEC=1 SEAMWELL_FORCE="$FORCE" exec bash "$REPO/deploy/deploy.sh" "$SHA"
 fi
 git -C "$REPO" log -1 --format='  deploying %h — %s (%an, %cr)' "$SHA"
 
-if [[ "$(live_name)" == *"-${SHA:0:7}" ]]; then
-  note "That commit is already live — nothing to do."
+if [[ "$FORCE" != 1 && "$(live_name)" == *"-${SHA:0:7}" ]]; then
+  note "That commit is already live — nothing to do. (After changing settings: deploy.sh rebuild)"
   exit 0
 fi
 
