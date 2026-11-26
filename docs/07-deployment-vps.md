@@ -226,27 +226,31 @@ and once a month test a restore (commands at the bottom of the script).
 Day to day: make changes on a branch → open a pull request → CI checks it → **merge** → GitHub checks `main` again and
 deploys that exact commit to the VPS. You can watch it under GitHub → **Actions**.
 
-### 8a. One-time setup on the VPS: a key that can only deploy
+### 8a. One-time setup: a key that can only deploy
+Make the key on **your PC** (copying a private key out of a web console can break it). PowerShell:
+```powershell
+ssh-keygen -t ed25519 -f "$env:USERPROFILE\.ssh\seamwell_gh_deploy" -C github-actions-deploy   # Enter twice: NO passphrase
+Get-Content "$env:USERPROFILE\.ssh\seamwell_gh_deploy.pub"                                    # one line "ssh-ed25519 AAAA… github-actions-deploy"
+```
+On the **VPS** as `deploy`, lock that public key to the deploy script:
 ```bash
-ssh-keygen -t ed25519 -f ~/gh-deploy -N "" -C "github-actions-deploy"
-echo "command=\"bash /var/www/seamwell/repo/deploy/deploy.sh --from-ssh\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty $(cat ~/gh-deploy.pub)" >> ~/.ssh/authorized_keys
-cat ~/gh-deploy          # the PRIVATE key → copy it straight into GitHub (8b) — never into a chat or a file elsewhere
-rm ~/gh-deploy ~/gh-deploy.pub
+install -d -m 700 ~/.ssh
+read -r -p "Paste the ssh-ed25519 line, then Enter: " PUB
+echo "command=\"bash /var/www/seamwell/repo/deploy/deploy.sh --from-ssh\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty $PUB" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys && ssh-keygen -lf ~/.ssh/authorized_keys
+cat /etc/ssh/ssh_host_ed25519_key.pub        # the server's identity → GitHub secret VPS_HOST_KEY (public, safe)
 ```
 The `command=` lock means this key cannot open a shell, copy files or tunnel: whatever GitHub sends, the server only
 runs `deploy.sh`, which accepts nothing but `deploy <40-character commit id>` — and only for commits already on `main`.
-
-On **your PC**, read the server's identity so GitHub can verify it's really your VPS (no trust-on-first-use):
-```bash
-ssh-keyscan -t ed25519 <vps-ip>            # one line: "<vps-ip> ssh-ed25519 AAAA…" → VPS_KNOWN_HOSTS
-```
-(Optional check: its fingerprint `ssh-keyscan -t ed25519 <vps-ip> | ssh-keygen -lf -` must match the server's
-`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`.)
+Then on your PC: `notepad "$env:USERPROFILE\.ssh\seamwell_gh_deploy"` → Ctrl+A, Ctrl+C → paste into the GitHub secret
+`VPS_SSH_KEY` (8b) — never into a chat — and delete the PC copy: `Remove-Item "$env:USERPROFILE\.ssh\seamwell_gh_deploy*"`.
 
 ### 8b. One-time setup on GitHub (`github.com/Nodemor/seamwell` → Settings)
 1. **Environments → New environment `production`** → Deployment branches and tags → **Selected branches → `main`**.
-   Add these **environment secrets**: `VPS_HOST` (the IP), `VPS_USER` (`deploy`), `VPS_SSH_KEY` (the private key from 8a),
-   `VPS_KNOWN_HOSTS` (the ssh-keyscan line), and `VPS_PORT` only if SSH isn't on 22.
+   Add these **environment secrets**: `VPS_HOST` (the IP, e.g. `189.31.33.36`), `VPS_USER` (`deploy`), `VPS_SSH_KEY` (the
+   private key from 8a), `VPS_HOST_KEY` (the `ssh-ed25519 AAAA…` line from `/etc/ssh/ssh_host_ed25519_key.pub`), and
+   `VPS_PORT` only if SSH isn't on 22. The workflow cleans up pasted line breaks / Windows line endings, checks the key
+   format, and prints the server fingerprint it expects (compare with `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`).
 2. **Secrets and variables → Actions → Variables → New repository variable** `DEPLOY_ENABLED` = `true`
    (until this is set, merges run the checks but don't deploy — handy before the VPS exists).
 3. **Rules → Rulesets → New branch ruleset** for `main`: restrict deletions, block force pushes, require a pull request,
