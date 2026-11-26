@@ -31,16 +31,25 @@ finished, then switches in one step. If the new release fails its health check, 
 - The code on GitHub (`https://github.com/Nodemor/seamwell`, public — nothing secret is in the repo).
 - A domain. In Hostinger hPanel → **DNS**: `A` record `@` → the VPS IP, and `A` record `www` → the same IP (allow up to an hour).
 - Your PC's SSH key: `ssh-keygen -t ed25519` (if you don't have one), then copy `~/.ssh/id_ed25519.pub`.
-- In hPanel → VPS → **OS**: Ubuntu 24.04 (plain, no control panel). Hostinger's own VPS firewall can stay off; we use UFW.
+- In hPanel → VPS → **OS**: Ubuntu 24.04 (plain, no control panel).
+
+### Using Hostinger's web console (Browser terminal)
+hPanel → VPS → **Browser terminal** opens a root shell in the browser — you can run this whole guide from it.
+- It logs you in as **root**. Steps marked "as `deploy`" → first run `su - deploy` (type `exit` to get back to root).
+- It works even when SSH is broken or locked down, so it's your **rescue door** — keep the root password in your
+  password manager (hPanel → VPS → Settings → change root password).
+- GitHub's automatic deploys still need SSH (port 22, key only) — that's why §1 keeps SSH open but locks it to keys.
+- Pasting: use the console's paste button / right-click; long one-liners are safer typed in pieces if paste drops characters.
 
 ## 1. Server basics (as root, first login only)
 ```bash
-ssh root@<vps-ip>
 adduser deploy && usermod -aG sudo deploy
 mkdir -p /home/deploy/.ssh && nano /home/deploy/.ssh/authorized_keys     # paste YOUR PUBLIC key (id_ed25519.pub)
 chown -R deploy: /home/deploy/.ssh && chmod 700 /home/deploy/.ssh && chmod 600 /home/deploy/.ssh/authorized_keys
 ```
-Open a **second** terminal and check `ssh deploy@<vps-ip>` works **before** locking root out. Then, as `deploy`:
+(Run these in the Browser terminal, or after `ssh root@<vps-ip>` from your PC.)
+Check `ssh deploy@<vps-ip>` from your PC works **before** locking root out — if it doesn't, the Browser terminal still
+gets you in. Then, as `deploy`:
 ```bash
 sudo nano /etc/ssh/sshd_config.d/99-hardening.conf
 #   PasswordAuthentication no
@@ -54,6 +63,50 @@ sudo systemctl enable --now fail2ban            # default jail protects SSH
 sudo dpkg-reconfigure -plow unattended-upgrades # answer "Yes"
 ```
 ✅ Expect: `sudo ufw status` → only `OpenSSH` and `Nginx Full`; `sudo fail2ban-client status sshd` → jail active.
+
+### 1b. Firewalls — three free layers
+1. **Hostinger VPS firewall** (hPanel → VPS → **Security → Firewall**; menu names may differ slightly) — filters traffic
+   *before* it reaches the server. Create a configuration with **Accept TCP 22, 80, 443** (from anywhere) and activate it;
+   everything else is dropped. Ports 3000, 4000 and 5432 must never be opened anywhere.
+2. **UFW** on the server (done above: only SSH + Nginx). Two layers means one mistake doesn't expose anything.
+3. **Ban repeat attackers** — fail2ban is already running for SSH. Add Nginx jails so scanners hammering the site are
+   banned too:
+   ```bash
+   sudo tee /etc/fail2ban/jail.d/seamwell.conf >/dev/null <<'JAIL'
+   [sshd]
+   enabled  = true
+   maxretry = 4
+   bantime  = 1h
+   findtime = 10m
+
+   [recidive]
+   enabled  = true
+   bantime  = 1w
+
+   [nginx-botsearch]
+   enabled  = true
+   port     = http,https
+   backend  = auto
+   logpath  = /var/log/nginx/access.log
+
+   [nginx-limit-req]
+   enabled  = true
+   port     = http,https
+   backend  = auto
+   logpath  = /var/log/nginx/error.log
+   JAIL
+   sudo systemctl restart fail2ban && sudo fail2ban-client status
+   ```
+   ✅ Expect: jails `nginx-botsearch, nginx-limit-req, recidive, sshd`. (`nginx-limit-req` bans IPs that keep hitting the
+   API rate limit in the Nginx file; `recidive` bans repeat offenders for a week.) Run this after §6 if Nginx isn't
+   installed yet.
+
+   *Optional instead of fail2ban:* **CrowdSec** (free) does the same and also blocks IPs that other servers worldwide
+   reported. Don't run both on SSH. Install: `curl -s https://install.crowdsec.net | sudo sh && sudo apt -y install crowdsec crowdsec-firewall-bouncer-iptables`,
+   then `sudo systemctl disable --now fail2ban`. Check with `sudo cscli metrics`.
+
+Don't block SSH to "only my IP": GitHub's deploy servers use changing IPs, and SSH is already key-only + banned on
+abuse. The Browser terminal is your way in if you ever lock yourself out.
 
 ## 2. Node.js 22 + PM2
 ```bash
