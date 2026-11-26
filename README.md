@@ -1,13 +1,13 @@
-# Seamwell Tailoring — e-commerce with Virtual Try-On
+# Seamwell Tailoring - e-commerce with Virtual Try-On
 
 A single-shop online store for a tailoring business (suits, blazers, shirts, trousers for men and women) with:
 
-- ✨ **Free AI Virtual Try-On** — customers upload a photo and see the outfit on themselves (runs on each customer's own free Hugging Face quota)
+- ✨ **Free AI Virtual Try-On** - customers upload a photo and see the outfit on themselves (runs on each customer's own free Hugging Face quota)
 - 🛍️ **Guest checkout** (accounts optional) with **Cash on Delivery** or **Bank Transfer** (card gateway such as PayHere planned for later)
-- 📦 **Order tracking** — the shop updates status; when shipped, the customer gets the courier name, tracking number and tracking link
+- 📦 **Order tracking** - the shop updates status; when shipped, the customer gets the courier name, tracking number and tracking link
 - ⭐ **Verified-purchase reviews** with admin moderation
-- 🔐 **Security built in** — JWT in httpOnly cookies, refresh-token rotation, TOTP two-factor auth (required for admins), argon2id, CSRF protection, rate limiting, Zod validation, parameterised SQL, audit log
-- 🎬 **GSAP animations** — split-text hero, DrawSVG "stitched" blazer, pinned scroll story, scroll-velocity marquee, magnetic try-on button; fully responsive and reduced-motion friendly
+- 🔐 **Security built in** - JWT in httpOnly cookies, refresh-token rotation, TOTP two-factor auth (required for admins), argon2id, CSRF protection, rate limiting, Zod validation, parameterised SQL, audit log
+- 🎬 **GSAP animations** - split-text hero, DrawSVG "stitched" blazer, pinned scroll story, scroll-velocity marquee, magnetic try-on button; fully responsive and reduced-motion friendly
 
 > "Seamwell Tailoring" and its logo are **sample branding** — replace them with the real shop's name, logo and details.
 
